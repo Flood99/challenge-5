@@ -8,15 +8,22 @@ using UnityEngine.UI;
 public class GameManagerX : MonoBehaviour
 {
     public TextMeshProUGUI scoreText;
+    public TextMeshProUGUI livesText;
     public TextMeshProUGUI gameOverText;
     public GameObject titleScreen;
-    public Button restartButton; 
+    public GameObject pauseScreen;
+    public Button restartButton;
+    public Slider volumeSlider; 
+    
 
     public List<GameObject> targetPrefabs;
 
+    private AudioSource audioSource;
     private int score;
+    private int lives;
     private float spawnRate = 1.5f;
     public bool isGameActive;
+    private bool paused = false;
 
     private float spaceBetweenSquares = 2.5f; 
     private float minValueX = -3.75f; //  x value of the center of the left-most square
@@ -29,8 +36,36 @@ public class GameManagerX : MonoBehaviour
         isGameActive = true;
         StartCoroutine(SpawnTarget());
         score = 0;
-        UpdateScore(0);
         titleScreen.SetActive(false);
+    }
+    public void Update()
+    {
+        if(lives <=0)
+        {
+           GameOver();
+        }
+        if(Input.GetButtonDown("Jump"))
+        {
+            paused = ! paused;
+            
+        }
+        if(paused)
+        {
+            pauseScreen.SetActive(true);
+            
+        }else{
+            pauseScreen.SetActive(false);
+            
+        }
+        audioSource.volume = volumeSlider.value;
+    }
+    public void Start()
+    {
+        UpdateScore(0);
+        UpdateLives(3);
+        audioSource = GetComponent<AudioSource>();
+        volumeSlider.value = 0.5f;
+        
     }
 
     // While game is active spawn a random target
@@ -41,7 +76,7 @@ public class GameManagerX : MonoBehaviour
             yield return new WaitForSeconds(spawnRate);
             int index = Random.Range(0, targetPrefabs.Count);
 
-            if (isGameActive)
+            if (isGameActive&& !paused)
             {
                 Instantiate(targetPrefabs[index], RandomSpawnPosition(), targetPrefabs[index].transform.rotation);
             }
@@ -71,6 +106,11 @@ public class GameManagerX : MonoBehaviour
     {
         score += scoreToAdd;
         scoreText.text = "score: " + score;
+    }
+    public void UpdateLives(int livesToAdd)
+    {
+        lives += livesToAdd;
+        livesText.text = "Lives: " + lives;
     }
 
     // Stop game, bring up game over text and restart button
